@@ -45,7 +45,6 @@ struct pa_sinp_evsubscr *pa_sink_input_ext_subscription(struct userdata *u)
     pa_hook_slot            *fixate;
     pa_hook_slot            *put;
     pa_hook_slot            *unlink;
-    pa_hook_slot            *state;
 
     pa_assert(u);
     pa_assert_se((core = u->core));
@@ -61,8 +60,6 @@ struct pa_sinp_evsubscr *pa_sink_input_ext_subscription(struct userdata *u)
                              PA_HOOK_LATE, sink_input_put, (void *)u);
     unlink = pa_hook_connect(hooks + PA_CORE_HOOK_SINK_INPUT_UNLINK,
                              PA_HOOK_LATE, sink_input_unlink, (void *)u);
-    state  = pa_hook_connect(hooks + PA_CORE_HOOK_SINK_INPUT_STATE_CHANGED,
-                             PA_HOOK_EARLY, (pa_hook_cb_t) sink_input_state_changed, (void *) u);
 
 
     subscr = pa_xnew0(struct pa_sinp_evsubscr, 1);
@@ -71,7 +68,10 @@ struct pa_sinp_evsubscr *pa_sink_input_ext_subscription(struct userdata *u)
     subscr->fixate = fixate;
     subscr->put    = put;
     subscr->unlink = unlink;
-    subscr->state  = state;
+    /* state hook is dynamically set when corking is done for the first time.
+     * This way if corking is never used, we don't need to set up the state
+     * hook. */
+    subscr->state  = NULL;
 
     return subscr;
 }
@@ -503,8 +503,18 @@ pa_bool_t pa_sink_input_ext_cork(struct userdata *u, pa_sink_input *si, pa_bool_
 
     pa_assert(si);
     pa_assert(u);
+    pa_assert(u->core);
+    pa_assert(u->ssi);
 
     pa_assert_se((ext = pa_sink_input_ext_lookup(u, si)));
+
+    if (!u->ssi->state) {
+        /* Check current sink input state and enable corking state following. */
+        u->ssi->state = pa_hook_connect(&u->core->hooks[PA_CORE_HOOK_SINK_INPUT_STATE_CHANGED],
+                                        PA_HOOK_EARLY, (pa_hook_cb_t) sink_input_state_changed, (void *) u);
+        ext->local.corked_by_client = PA_SINK_INPUT_CORKED == pa_sink_input_get_state(si);
+    }
+
     if (cork) {
         if (!ext->local.corked_by_client) {
             ext->local.ignore_state_change = TRUE;
