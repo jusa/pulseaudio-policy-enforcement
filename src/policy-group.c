@@ -531,16 +531,7 @@ void pa_policy_group_insert_sink_input(struct userdata      *u,
 
             if (group->flags & PA_POLICY_GROUP_FLAG_CORK_STREAM) {
                 if (pa_sink_input_ext_cork(u, si, group->corked))
-                    pa_log("stream '%s'/'%s' %scorked", group->name, sinp_name, group->corked ? "" : "un");
-                /*
-                if (group->corked) {
-                    pa_log_debug("stream '%s'/'%s' %scorked",
-                                 group->name, sinp_name,
-                                 group->corked ? "" : "un");
-                    
-                    pa_sink_input_ext_cork(u, si, group->corked);
-                }
-                */
+                    pa_log_debug("stream '%s'/'%s' %scorked", group->name, sinp_name, group->corked ? "" : "un");
             }
 
             if (local_mute) {

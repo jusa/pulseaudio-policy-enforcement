@@ -518,19 +518,19 @@ pa_bool_t pa_sink_input_ext_cork(struct userdata *u, pa_sink_input *si, pa_bool_
     if (cork) {
         if (!ext->local.corked_by_client) {
             ext->local.ignore_state_change = TRUE;
-            pa_log("sink input wasn't already corked by client -> cork");
+            pa_log_debug("sink input wasn't already corked by client -> cork");
             pa_sink_input_cork(si, TRUE);
             sink_input_corking_changed = TRUE;
         } else
-            pa_log("sink input was already corked by client -> not corking");
+            pa_log_debug("sink input was already corked by client -> not corking");
     } else {
         if (!ext->local.corked_by_client) {
             ext->local.ignore_state_change = TRUE;
-            pa_log("sink input wasn't already corked by client -> uncork");
+            pa_log_debug("sink input wasn't already corked by client -> uncork");
             pa_sink_input_cork(si, FALSE);
             sink_input_corking_changed = TRUE;
         } else
-            pa_log("sink input was already corked by client -> not uncorking");
+            pa_log_debug("sink input was already corked by client -> not uncorking");
     }
 
     return sink_input_corking_changed;
@@ -547,14 +547,14 @@ static pa_hook_result_t sink_input_state_changed(pa_core *c, pa_sink_input *sinp
 
     pa_assert_se((ext = pa_sink_input_ext_lookup(u, sinp)));
     if (ext->local.ignore_state_change) {
-        pa_log("pe local state change -> IGNORE");
+        pa_log_debug("local state change -> IGNORE");
         return PA_HOOK_OK;
     }
 
     ext->local.ignore_state_change = FALSE;
     corked_by_client = PA_SINK_INPUT_CORKED == pa_sink_input_get_state(sinp);
     if (corked_by_client != ext->local.corked_by_client) {
-        pa_log("corked_by_client changes to %s", corked_by_client ? "TRUE" : "FALSE");
+        pa_log_debug("corked_by_client changes to %s", corked_by_client ? "TRUE" : "FALSE");
         ext->local.corked_by_client = corked_by_client;
     }
 
